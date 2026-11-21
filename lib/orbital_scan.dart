@@ -7,27 +7,29 @@ import 'package:material_ui/material_ui.dart';
 class OrbitalScan extends StatelessWidget {
   const OrbitalScan({
     super.key,
-    required this.progress,
-    required this.active,
+    required this.expansion,
+    required this.angle,
+    required this.completion,
     required this.dark,
     required this.reducedMotion,
   });
-  final double progress;
-  final bool active;
+  final double expansion;
+  final double angle;
+  final double completion;
   final bool dark;
   final bool reducedMotion;
 
   double _phase(double start, double end) =>
-      ((progress - start) / (end - start)).clamp(0.0, 1.0);
+      ((completion - start) / (end - start)).clamp(0.0, 1.0);
 
   @override
   Widget build(BuildContext context) {
     const purple = Color(0xFFAD91FF);
     const green = Color(0xFF97DCC0);
-    final expand = Curves.easeInOutCubic.transform(_phase(0, 0.17));
-    final merge = Curves.easeInOutCubic.transform(_phase(0.67, 0.86));
-    final seal = Curves.easeOutBack.transform(_phase(0.82, 0.96));
-    final angle = reducedMotion ? 0.0 : _phase(0.06, 0.83) * math.pi * 3.2;
+    final expand = Curves.easeOutCubic.transform(expansion);
+    final merge = Curves.easeInOutCubic.transform(_phase(0, 0.52));
+    final seal = Curves.easeOutBack.transform(_phase(0.42, 0.76));
+    final rotation = reducedMotion ? 0.0 : angle;
     const icons = [
       Icons.document_scanner_outlined,
       Icons.notes_rounded,
@@ -35,9 +37,7 @@ class OrbitalScan extends StatelessWidget {
       Icons.trending_up_rounded,
     ];
     return Semantics(
-      label: active
-          ? 'Memproses struk: ikon mengorbit lalu menyatu menjadi centang sukses'
-          : 'Siap memindai struk',
+      label: completion > 0 ? 'Pemindaian selesai' : 'Sedang memindai struk',
       image: true,
       child: SizedBox(
         height: 105,
@@ -46,7 +46,7 @@ class OrbitalScan extends StatelessWidget {
           alignment: Alignment.center,
           clipBehavior: Clip.none,
           children: [
-            if (active && !reducedMotion)
+            if (!reducedMotion)
               Opacity(
                 opacity: expand * (1 - merge),
                 child: Container(
@@ -63,32 +63,23 @@ class OrbitalScan extends StatelessWidget {
                   ),
                 ),
               ),
-            if (active)
-              CustomPaint(
-                size: const Size(112, 112),
-                painter: _OrbitPainter(
-                  rotation: angle * 0.3,
-                  opacity: expand * (1 - merge),
-                  color: purple,
-                ),
+            CustomPaint(
+              size: const Size(112, 112),
+              painter: _OrbitPainter(
+                rotation: rotation,
+                opacity: expand * (1 - merge),
+                color: purple,
               ),
+            ),
             for (var i = 0; i < 4; i++)
               Builder(
                 builder: (context) {
-                  final theta = i * math.pi / 2 - math.pi / 2 + angle;
+                  final theta = i * math.pi / 2 - math.pi / 2 + rotation;
                   final radius = 38.0 * (1 - merge);
                   final rowX = (i - 1.5) * 34.0;
-                  final x = active
-                      ? lerpDouble(rowX, math.cos(theta) * radius, expand)! *
-                            (1 - merge)
-                      : rowX;
-                  final y = active
-                      ? math.sin(theta) * radius * expand
-                      : (i.isEven ? -2.0 : 1.0);
-                  final tilt = active
-                      ? (reducedMotion ? 0.0 : math.sin(theta + 0.5) * 0.22) *
-                            (1 - merge)
-                      : (i.isEven ? -0.10 : 0.08);
+                  final x = lerpDouble(rowX, math.cos(theta) * radius, expand)!;
+                  final y = math.sin(theta) * radius * expand;
+                  final tilt = math.sin(theta + 0.5) * 0.22 * (1 - merge);
                   return Transform.translate(
                     offset: Offset(x, y),
                     child: Transform.rotate(
@@ -96,10 +87,10 @@ class OrbitalScan extends StatelessWidget {
                       child: Transform.scale(
                         scale: 1 - merge * 0.52,
                         child: Opacity(
-                          opacity: (1 - _phase(0.79, 0.87)).clamp(0.0, 1.0),
+                          opacity: 1 - _phase(0.33, 0.57),
                           child: Container(
-                            width: active ? 34 : 30,
-                            height: active ? 34 : 30,
+                            width: 34,
+                            height: 34,
                             decoration: BoxDecoration(
                               color: Color.lerp(
                                 dark
@@ -120,19 +111,15 @@ class OrbitalScan extends StatelessWidget {
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: purple.withValues(
-                                    alpha: active ? 0.14 : 0.04,
-                                  ),
-                                  blurRadius: active ? 11 : 4,
+                                  color: purple.withValues(alpha: 0.14),
+                                  blurRadius: 11,
                                   offset: const Offset(0, 3),
                                 ),
                               ],
                             ),
                             child: Icon(
-                              !active && i == 3
-                                  ? Icons.check_rounded
-                                  : icons[i],
-                              size: active ? 20 : 17,
+                              icons[i],
+                              size: 20,
                               color: Color.lerp(purple, green, merge),
                             ),
                           ),
@@ -142,7 +129,7 @@ class OrbitalScan extends StatelessWidget {
                   );
                 },
               ),
-            if (active && progress > 0.82)
+            if (completion > 0.42)
               Transform.scale(
                 scale: seal,
                 child: Container(
@@ -153,7 +140,7 @@ class OrbitalScan extends StatelessWidget {
                         ? const Color(0xFF263E36)
                         : const Color(0xFFE3F4EB),
                     borderRadius: BorderRadius.circular(
-                      18 + 8 * _phase(0.82, 1),
+                      18 + 8 * _phase(0.42, 0.76),
                     ),
                     border: Border.all(color: green.withValues(alpha: 0.35)),
                     boxShadow: [
@@ -166,7 +153,7 @@ class OrbitalScan extends StatelessWidget {
                   ),
                   child: CustomPaint(
                     painter: _CheckPainter(
-                      progress: _phase(0.86, 0.98),
+                      progress: _phase(0.48, 0.78),
                       color: dark ? green : const Color(0xFF34896B),
                     ),
                   ),

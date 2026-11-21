@@ -1,0 +1,11 @@
+Browser OCR dependencies
+
+Tesseract.js 6.0.1 (Apache 2.0)
+https://github.com/naptha/tesseract.js/tree/v6.0.1
+
+Tesseract.js Core 6.0.0 (Apache 2.0)
+https://github.com/naptha/tesseract.js-core/tree/v6.0.0
+
+Indonesian language model from @tesseract.js-data/ind 1.0.0, 4.0.0_best_int
+https://www.npmjs.com/package/@tesseract.js-data/ind/v/1.0.0
+Upstream model: https://github.com/tesseract-ocr/tessdata_best (Apache 2.0)
